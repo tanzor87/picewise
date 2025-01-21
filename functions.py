@@ -6,16 +6,33 @@ from pathlib import Path
 
 
 def nearest(lst, target):
+    """
+    Выбирает наиболее близкую частоту из списка
+    :param lst: Список частот
+    :param target: Целевое значение частоты, наиболее близкое которому необходимо найти из списка lst
+    :return: Значение частоты
+    """
     return min(lst, key=lambda x: abs(x - target))
 
 
 def get_nk_single_t_from_excel(file_name: Path, temperature):
+    """
+    Из Excel файла с экспериментальными данными, выбирает данные при заданной температуре
+    :param file_name: Путь до Excel файла с экспериментальными данными. Тип Path из библиотеки pathlib
+    :param temperature: Значение температуры, тип string
+    :return: Dataframe
+    """
     nk_file = pd.ExcelFile(file_name)
     data_nk_single_t = nk_file.parse(sheet_name=temperature, header=[0, 1], index_col=0)
     return data_nk_single_t
 
 
 def get_temperatures(file_name: Path):
+    """
+    Получаем все значения температур измерения из названия листов Excel файла
+    :param file_name: Путь до Excel файла с экспериментальными данными. Тип Path из библиотеки pathlib
+    :return: Список температур
+    """
     data_file = pd.ExcelFile(file_name)
     temperatures = [sheet for sheet in data_file.sheet_names]
     return temperatures
@@ -38,6 +55,15 @@ def combo(x: list, y1=None, y2=None):
 
 
 def chose_data_target_freq(data, target_freq, last_del=0):
+    """
+    Из DataFrame выделяем экспериментальные данные в зависимости от влажности на заданной частоте. При необходимости,
+    если часть данных в конце списка нам не нужны, мы их можем не учитывать, для этого используется параметр last_del,
+    задавая который, мы удаляем необходимое количество элементов с конца списка.
+    :param data: DataFrame с экспериментальными данными
+    :param target_freq: Часто электромагнитной волны
+    :param last_del: Число элементов для удаления в конце списка. Тип integer
+    :return: Tuple из трех списков: 1. Влажность, 2. коэффициент преломления, 3. коэффициент затухания
+    """
     frequencies = data.index.to_numpy()
     frequency = nearest(frequencies, target_freq)
 
@@ -56,11 +82,23 @@ def chose_data_target_freq(data, target_freq, last_del=0):
 
 
 def get_frequency(data):
+    """
+    Получаем список частот измерений
+    :param data: DataFrame c экспериментальными данными
+    :return: Список частот измерений. Тип numpy.array
+    """
     frequencies = data.index.to_numpy()
     return frequencies
 
 
 def initial_mg_ts(data, num_breaks):
+    """
+    Получаем первоначальные значения точек излома кусочно-ломанной функции
+    :param data: Экспериментальные данные для аппроксимации на заданной частоте.
+    Тип: список из трех вложенных списков. 1. Влажность, 2. коэффициент преломления, 3. коэффициент затухания
+    :param num_breaks: количество точек излома
+    :return: список, со значениями влажностей, в которых происходит излом функции
+    """
     moisture = data[0]
     n_single_f = data[1]
     k_single_f = data[2]
@@ -91,6 +129,23 @@ def initial_mg_ts(data, num_breaks):
 
 
 def initial_slopes(data, mg_ts, num_points = 400):
+    """
+    Получаем первоначальные значения комплексных показателей преломления категорий почвенной воды
+     при заданных значениях точек излома. Так же рассчитываются теоретические значения аппроксимирующей функции в
+     зависимости от влажности
+    :param data: Экспериментальные данные для аппроксимации на заданной частоте.
+    Тип: список из трех вложенных списков. 1. Влажность, 2. коэффициент преломления, 3. коэффициент затухания
+    :param mg_ts: значения точек излома. Тип: list
+    :param num_points: количество точек для построения теоретической зависимости
+    :return: Tuple из 7ми списков:
+    1. пересечение прямой коэффициента преломления в 0,
+    2. пересечение прямой коэффициента затухания в 0,
+    3. значения коэффициентов преломления категорий почвенной воды,
+    4. значения коэффициентов затухания категорий почвенной воды,
+    5. теоретические значения влажности,
+    6. теоретические значения коэффициента преломления,
+    7. теоретические значения коэффициента затухания.
+    """
     moisture = data[0]
     n_single_f = data[1]
     k_single_f = data[2]
